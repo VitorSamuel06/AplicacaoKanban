@@ -201,6 +201,20 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
+-- Helper function for project_members membership checks
+CREATE OR REPLACE FUNCTION public.is_project_scrum_master(project_uuid UUID)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM project_members
+    WHERE project_id = $1
+      AND user_id = auth.uid()
+      AND role = 'scrum_master'
+  );
+$$;
+
 -- PROFILES policies
 CREATE POLICY "Users can view all profiles"
   ON profiles FOR SELECT
@@ -267,12 +281,7 @@ CREATE POLICY "Scrum masters can manage members"
   ON project_members FOR INSERT
   TO authenticated
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM project_members pm
-      WHERE pm.project_id = project_members.project_id
-        AND pm.user_id = auth.uid()
-        AND pm.role = 'scrum_master'
-    )
+    is_project_scrum_master(project_id)
     OR
     (
       user_id = auth.uid()
