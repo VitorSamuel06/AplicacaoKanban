@@ -13,7 +13,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center app-gradient-bg">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center animate-fadeIn">
           <div className="h-10 w-10 border-3 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -28,7 +28,7 @@ function AppContent() {
 
   return (
     <ProjectProvider>
-      <div className="min-h-screen flex flex-col app-gradient-bg">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <div className="flex-1 flex min-h-0 relative">
           {/* Mobile sidebar overlay */}
