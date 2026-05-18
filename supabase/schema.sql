@@ -267,13 +267,21 @@ CREATE POLICY "Scrum masters can manage members"
   ON project_members FOR INSERT
   TO authenticated
   WITH CHECK (
-    project_id IN (
-      SELECT project_id FROM project_members
-      WHERE user_id = auth.uid() AND role = 'scrum_master'
+    EXISTS (
+      SELECT 1 FROM project_members pm
+      WHERE pm.project_id = project_members.project_id
+        AND pm.user_id = auth.uid()
+        AND pm.role = 'scrum_master'
     )
     OR
-    -- Allow initial member (project creator)
-    user_id = auth.uid()
+    (
+      user_id = auth.uid()
+      AND EXISTS (
+        SELECT 1 FROM projects
+        WHERE id = project_members.project_id
+          AND created_by = auth.uid()
+      )
+    )
   );
 
 CREATE POLICY "Scrum masters can update members"

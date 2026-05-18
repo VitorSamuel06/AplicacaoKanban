@@ -147,7 +147,7 @@ export default function ProjectList() {
       </div>
 
       {/* Create Modal */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Novo Projeto">
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Novo Projeto" size="lg">
         <form onSubmit={handleCreate} className="space-y-4">
           <Input
             label="Nome do projeto"
@@ -196,7 +196,7 @@ export default function ProjectList() {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Editar Projeto">
+      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Editar Projeto" size="lg">
         <form onSubmit={handleEdit} className="space-y-4">
           <Input
             label="Nome do projeto"

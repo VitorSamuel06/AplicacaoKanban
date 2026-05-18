@@ -65,13 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) return { error: error.message };
-    
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        full_name: fullName,
-      });
+
+    if (!data.user) {
+      return { error: 'Cadastro realizado. Verifique seu e-mail para ativar a conta.' };
     }
+
+    await supabase.from('profiles').upsert({
+      id: data.user.id,
+      full_name: fullName,
+    });
     return { error: null };
   };
 

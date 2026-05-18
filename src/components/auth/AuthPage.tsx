@@ -40,37 +40,39 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md animate-fadeIn">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-primary/10 mb-4 shadow-lg shadow-primary/10">
-            <Logo className="h-10 w-10 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.16),_transparent_42%),linear-gradient(180deg,#f8fafc,#eff6ff)] p-4">
+      <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-white/95 shadow-2xl shadow-slate-900/10 backdrop-blur-xl animate-fadeIn">
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-br from-primary/20 via-transparent to-transparent pointer-events-none" />
+        <div className="relative p-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-[1.75rem] bg-primary/10 border border-primary/15 shadow-sm shadow-primary/10 mb-4">
+              <Logo className="h-10 w-10 text-primary" />
+            </div>
+            <h1 className="text-4xl font-bold text-foreground">ScrumFlow</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Kanban + Scrum para sua equipe
+            </p>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">ScrumFlow</h1>
-          <p className="text-muted-foreground mt-2">
-            Kanban + Scrum para sua equipe
-          </p>
-        </div>
 
-        {/* Card */}
-        <div className="bg-card border border-border rounded-xl shadow-lg p-6">
-          <div className="flex mb-6 bg-secondary rounded-lg p-1">
+          <div className="bg-card border border-border/80 rounded-[1.75rem] p-6 shadow-sm shadow-slate-900/5">
+          <div className="flex mb-6 bg-secondary rounded-full p-1">
             <button
+              type="button"
               onClick={() => { setIsLogin(true); setError(''); }}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
+              className={`flex-1 rounded-[1rem] py-3 text-sm font-semibold transition-all ${
                 isLogin
-                  ? 'bg-card text-foreground shadow-sm'
+                  ? 'bg-white text-primary shadow-sm shadow-primary/10'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               Entrar
             </button>
             <button
+              type="button"
               onClick={() => { setIsLogin(false); setError(''); }}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
+              className={`flex-1 rounded-[1rem] py-3 text-sm font-semibold transition-all ${
                 !isLogin
-                  ? 'bg-card text-foreground shadow-sm'
+                  ? 'bg-white text-primary shadow-sm shadow-primary/10'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -140,5 +142,6 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  </div>
   );
 }
