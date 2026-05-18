@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS projects (
   description TEXT,
   wip_limit INTEGER NOT NULL DEFAULT 5,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID NOT NULL REFERENCES auth.users(id)
+  created_by UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_projects_created_by ON projects(created_by);
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   status TEXT NOT NULL DEFAULT 'backlog' CHECK (status IN ('backlog', 'in_progress', 'in_review', 'done')),
   priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
   assignee_id UUID REFERENCES auth.users(id),
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id),
   deadline TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -201,37 +201,59 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
--- Helper function for project_members membership checks
+-- Helper functions for project_members membership checks
+CREATE OR REPLACE FUNCTION public.is_project_member(project_uuid UUID)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET row_security = off
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM project_members
+    WHERE project_id = project_uuid
+      AND user_id = auth.uid()
+  );
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.is_project_scrum_master(project_uuid UUID)
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
+SET row_security = off
 AS $$
-  SELECT EXISTS (
+BEGIN
+  RETURN EXISTS (
     SELECT 1 FROM project_members
-    WHERE project_id = $1
+    WHERE project_id = project_uuid
       AND user_id = auth.uid()
       AND role = 'scrum_master'
   );
+END;
 $$;
 
 -- PROFILES policies
+DROP POLICY IF EXISTS "Users can view all profiles" ON profiles;
 CREATE POLICY "Users can view all profiles"
   ON profiles FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile"
   ON profiles FOR UPDATE
   TO authenticated
   USING (id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 CREATE POLICY "Users can insert own profile"
   ON profiles FOR INSERT
   TO authenticated
   WITH CHECK (id = auth.uid());
 
 -- PROJECTS policies
+DROP POLICY IF EXISTS "Members can view their projects" ON projects;
 CREATE POLICY "Members can view their projects"
   ON projects FOR SELECT
   TO authenticated
@@ -241,11 +263,13 @@ CREATE POLICY "Members can view their projects"
     )
   );
 
+DROP POLICY IF EXISTS "Authenticated users can create projects" ON projects;
 CREATE POLICY "Authenticated users can create projects"
   ON projects FOR INSERT
   TO authenticated
   WITH CHECK (created_by = auth.uid());
 
+DROP POLICY IF EXISTS "Scrum masters can update projects" ON projects;
 CREATE POLICY "Scrum masters can update projects"
   ON projects FOR UPDATE
   TO authenticated
@@ -256,6 +280,7 @@ CREATE POLICY "Scrum masters can update projects"
     )
   );
 
+DROP POLICY IF EXISTS "Creator or scrum master can delete projects" ON projects;
 CREATE POLICY "Creator or scrum master can delete projects"
   ON projects FOR DELETE
   TO authenticated
@@ -268,22 +293,19 @@ CREATE POLICY "Creator or scrum master can delete projects"
   );
 
 -- PROJECT MEMBERS policies
+DROP POLICY IF EXISTS "Members can view project members" ON project_members;
 CREATE POLICY "Members can view project members"
   ON project_members FOR SELECT
   TO authenticated
-  USING (
-    project_id IN (
-      SELECT project_id FROM project_members WHERE user_id = auth.uid()
-    )
-  );
+  USING (is_project_member(project_id));
 
+DROP POLICY IF EXISTS "Scrum masters can manage members" ON project_members;
 CREATE POLICY "Scrum masters can manage members"
   ON project_members FOR INSERT
   TO authenticated
   WITH CHECK (
     is_project_scrum_master(project_id)
-    OR
-    (
+    OR (
       user_id = auth.uid()
       AND EXISTS (
         SELECT 1 FROM projects
@@ -293,6 +315,7 @@ CREATE POLICY "Scrum masters can manage members"
     )
   );
 
+DROP POLICY IF EXISTS "Scrum masters can update members" ON project_members;
 CREATE POLICY "Scrum masters can update members"
   ON project_members FOR UPDATE
   TO authenticated
@@ -303,6 +326,7 @@ CREATE POLICY "Scrum masters can update members"
     )
   );
 
+DROP POLICY IF EXISTS "Scrum masters can remove members" ON project_members;
 CREATE POLICY "Scrum masters can remove members"
   ON project_members FOR DELETE
   TO authenticated
@@ -314,6 +338,7 @@ CREATE POLICY "Scrum masters can remove members"
   );
 
 -- TASKS policies
+DROP POLICY IF EXISTS "Members can view project tasks" ON tasks;
 CREATE POLICY "Members can view project tasks"
   ON tasks FOR SELECT
   TO authenticated
@@ -323,6 +348,7 @@ CREATE POLICY "Members can view project tasks"
     )
   );
 
+DROP POLICY IF EXISTS "Members can create tasks" ON tasks;
 CREATE POLICY "Members can create tasks"
   ON tasks FOR INSERT
   TO authenticated
@@ -333,6 +359,7 @@ CREATE POLICY "Members can create tasks"
     AND created_by = auth.uid()
   );
 
+DROP POLICY IF EXISTS "Members can update tasks" ON tasks;
 CREATE POLICY "Members can update tasks"
   ON tasks FOR UPDATE
   TO authenticated
@@ -342,6 +369,7 @@ CREATE POLICY "Members can update tasks"
     )
   );
 
+DROP POLICY IF EXISTS "Scrum masters can delete any task" ON tasks;
 CREATE POLICY "Scrum masters can delete any task"
   ON tasks FOR DELETE
   TO authenticated
